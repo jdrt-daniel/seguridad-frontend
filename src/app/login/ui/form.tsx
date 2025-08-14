@@ -1,6 +1,5 @@
 'use client'
 
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -11,15 +10,15 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
 
-import { Controller, useForm } from "react-hook-form";
-import { Servicios } from "@/services"
-import { Constantes } from "@/config"
-import { useState } from "react"
-import { delay, guardarCookie, imprimir } from "@/utils"
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthProvider"
-
+import { imprimir } from "@/utils"
+import { yupResolver } from "@hookform/resolvers/yup"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { Controller, useForm } from "react-hook-form"
+import * as yup from "yup"
 
 export function LoginForm({
   className,
@@ -39,7 +38,13 @@ export function LoginForm({
       defaultValues: {
         usuario: "ADMINISTRADOR",
         contrasena: "123"
-      }
+      },
+      resolver: yupResolver(
+        yup.object({
+          usuario: yup.string().required("El usuario es requerido"),
+          contrasena: yup.string().required("La contrasena es requerida")
+        })
+      )
     }
   );
 
@@ -47,7 +52,8 @@ export function LoginForm({
     try {
       setLoading(true);
       await ingresar(data);
-    } catch (e) {
+    } catch (e: any) {
+      setError(e.mensaje);
       imprimir(`Error al iniciar sesión: `, e);
     } finally {
       setLoading(false);
@@ -104,20 +110,27 @@ export function LoginForm({
                     name="usuario"
                     control={control}
                     rules={{ required: "El usuario es requerido" }}
-                    render={({ field }) => (
-                      <Input
-                        id="email"
-                        type="text"
-                        placeholder="ADMIN"
-                        required
-                        {...field}
-                        disabled={loading}
-                        className={cn(
-                          "w-full",
-                          loading && "cursor-not-allowed opacity-50",
-                          error && "border-red-500"
+                    render={({ field, fieldState }) => (
+                      <>
+                        <Input
+                          id="email"
+                          type="text"
+                          placeholder="ADMIN"
+                          {...field}
+                          disabled={loading}
+                          className={cn(
+                            "w-full",
+                            loading && "cursor-not-allowed opacity-50",
+                            error && "border-red-500",
+                            fieldState.error && "border-red-500"
+                          )}
+                        />
+                        {fieldState.error && (
+                          <p className="text-red-500 text-center">
+                            {fieldState.error.message}
+                          </p>
                         )}
-                      />
+                      </>
                     )}
                   />
                 </div>
@@ -134,19 +147,19 @@ export function LoginForm({
                   <Controller
                     name="contrasena"
                     control={control}
-                    rules={{ required: "La contrasena es requerida" }}
-                    render={({ field }) => (
+                    rules={{ required: "La contrasena es requerida", min: { value: 6, message: "La contrasena debe tener al menos 6 caracteres" } }}
+                    render={({ field, fieldState }) => (
                       <Input
                         id="password"
                         type="password"
                         placeholder="********"
-                        required
                         {...field}
                         disabled={loading}
                         className={cn(
                           "w-full",
                           loading && "cursor-not-allowed opacity-50",
-                          error && "border-red-500"
+                          error && "border-red-500",
+                          fieldState.error && "border-red-500"
                         )}
                       />
                     )}

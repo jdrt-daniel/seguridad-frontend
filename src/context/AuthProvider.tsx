@@ -116,8 +116,10 @@ export const AuthProvider = ({ children }: AuthContextType) => {
             await obtenerPermisos();
             router.replace("/dashboard");
         } catch (e) {
+
             imprimir(`Error al iniciar sesión: `, e);
             borrarSesionUsuario();
+            throw e;
         } finally {
             setLoading(false);
         }
